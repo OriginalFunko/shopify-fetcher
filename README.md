@@ -2,11 +2,17 @@
 
 This library returns all products or ids from a Shopify collection using the GraphQL endpoint. It automatically handles pagination.
 
+Inside of your project, do:
+
+```
+yarn add shopify-collection-fetcher
+```
+
 Simply include the library:
 
 ```js
 const shopifyCollectionFetcher = require('shopify-collection-fetcher');
-shopifyCollectionFetcher.init(<API_URI>, <API_TOKEN>)
+shopifyCollectionFetcher.init(API_URI, API_TOKEN);
 ```
 
 Then call it as needed:
