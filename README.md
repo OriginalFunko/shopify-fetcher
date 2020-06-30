@@ -2,6 +2,10 @@
 
 This library returns all products or ids from a Shopify collection using the GraphQL endpoint. It automatically handles pagination.
 
+---
+
+## Usage:
+
 Inside of your project, do:
 
 ```
@@ -31,9 +35,11 @@ let productIds = await shopifyCollectionFetcher.parseIt(id, productsResult);
 products = products.concat(productIds);
 ```
 
-Advanced configuration:
+---
 
-Beyond the `SHOPIFY_API_URI` and `SHOPIFY_API_TOKEN` settings (which will inherit `process.env.SHOPIFY_API_URI` and `process.env.SHOPIFY_API_TOKEN` if available), here is the complete list of settings available:
+### Configuration:
+
+Beyond the `SHOPIFY_API_URI` and `SHOPIFY_API_TOKEN` settings (which will inherit `process.env.SHOPIFY_API_URI` and `process.env.SHOPIFY_API_TOKEN` if available), here is the complete list of settings:
 
 ```js
 shopifyCollectionFetcher.init({
