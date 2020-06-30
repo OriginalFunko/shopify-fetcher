@@ -32,13 +32,17 @@ const sleep = async (ms) => {
 }
 
 const shopifyCollectionFetcher = {
-  SHOPIFY_API_URI: '',
-  SHOPIFY_API_TOKEN: ''
+  SHOPIFY_API_URI: process.env.SHOPIFY_API_URI,
+  SHOPIFY_API_TOKEN: process.env.SHOPIFY_API_TOKEN,
+  SHOPIFY_API_RATE_LIMIT: 50,
+  SHOPIFY_API_GRAPHQL_PRODUCTS: 20
 }
 
-shopifyCollectionFetcher.init = (API_URI, API_TOKEN) => {
-  shopifyCollectionFetcher.SHOPIFY_API_URI = process.env.SHOPIFY_API_URI || API_URI
-  shopifyCollectionFetcher.SHOPIFY_API_TOKEN = process.env.SHOPIFY_API_TOKEN || API_TOKEN
+shopifyCollectionFetcher.init = (configObj) => {
+  shopifyCollectionFetcher.SHOPIFY_API_URI = configObj.SHOPIFY_API_URI || shopifyCollectionFetcher.SHOPIFY_API_URI
+  shopifyCollectionFetcher.SHOPIFY_API_TOKEN = configObj.SHOPIFY_API_TOKEN || shopifyCollectionFetcher.SHOPIFY_API_TOKEN
+  shopifyCollectionFetcher.SHOPIFY_API_RATE_LIMIT = shopifyCollectionFetcher.SHOPIFY_API_RATE_LIMIT || 50
+  shopifyCollectionFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS = configObj.SHOPIFY_API_GRAPHQL_PRODUCTS || 20
 }
 
 /**
@@ -61,7 +65,7 @@ shopifyCollectionFetcher.fetchIt = async (collectionId, afterCursor = null) => {
         edges {
           node {
             id
-            products(first: 20, sortKey: COLLECTION_DEFAULT${after}) {
+            products(first: ${shopifyCollectionFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS}, sortKey: COLLECTION_DEFAULT${after}) {
               pageInfo {
                 hasNextPage
               }
@@ -103,7 +107,7 @@ shopifyCollectionFetcher.fetchIt = async (collectionId, afterCursor = null) => {
           const limit = limitCurrent / limitMax * 100
 
           // Check API limit, if more than 50%.... wait
-          if (limit >= 50) {
+          if (limit >= shopifyCollectionFetcher.SHOPIFY_API_RATE_LIMIT) {
             console.log(`Getting close to API limit, ${limit}% of ${limitMax}`)
             // await sleep(randomIntFromInterval(1000, 5000))
           }
@@ -143,7 +147,8 @@ shopifyCollectionFetcher.fetchIt = async (collectionId, afterCursor = null) => {
  * @param data
  * @returns {Promise<void>}
  */
-shopifyCollectionFetcher.parseIt = async (collectionId, responseData, items = []) => {
+shopifyCollectionFetcher.parseIt = async (collectionId, responseData) => {
+  const items = []
   if (responseData !== null) {
     // let response = JSON.parse(data)
 

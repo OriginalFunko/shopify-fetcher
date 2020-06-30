@@ -12,7 +12,15 @@ Simply include the library:
 
 ```js
 const shopifyCollectionFetcher = require('shopify-collection-fetcher');
-shopifyCollectionFetcher.init(API_URI, API_TOKEN);
+```
+
+Initialize your config settings:
+
+```js
+shopifyCollectionFetcher.init({
+    SHOPIFY_API_URI: '<API_URI>',
+    SHOPIFY_API_TOKEN: '<API_TOKEN>',
+});
 ```
 
 Then call it as needed:
@@ -21,4 +29,17 @@ Then call it as needed:
 let productsResult = await shopifyCollectionFetcher.fetchIt(id);
 let productIds = await shopifyCollectionFetcher.parseIt(id, productsResult);
 products = products.concat(productIds);
+```
+
+Advanced configuration:
+
+Beyond the `SHOPIFY_API_URI` and `SHOPIFY_API_TOKEN` settings (which will inherit `process.env.SHOPIFY_API_URI` and `process.env.SHOPIFY_API_TOKEN` if available), here is the complete list of settings available:
+
+```js
+shopifyCollectionFetcher.init({
+    SHOPIFY_API_URI: '<API_URI>',
+    SHOPIFY_API_TOKEN: '<API_TOKEN>',
+    SHOPIFY_API_RATE_LIMIT: 50,
+    SHOPIFY_API_GRAPHQL_PRODUCTS: 20,
+});
 ```
