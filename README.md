@@ -37,9 +37,9 @@ products = products.concat(productIds);
 
 ---
 
-### All configuration settings:
+### Configuration:
 
-Beyond the `SHOPIFY_API_URI` and `SHOPIFY_API_TOKEN` settings (which will inherit `process.env.SHOPIFY_API_URI` and `process.env.SHOPIFY_API_TOKEN` if available), here is the complete list of settings available:
+Beyond the `SHOPIFY_API_URI` and `SHOPIFY_API_TOKEN` settings (which will inherit `process.env.SHOPIFY_API_URI` and `process.env.SHOPIFY_API_TOKEN` if available), here is the complete list of settings:
 
 ```js
 shopifyCollectionFetcher.init({
