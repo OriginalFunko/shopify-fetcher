@@ -82,9 +82,9 @@ shopifyCollectionFetcher.fetchIt = async (collectionId, afterCursor = null) => {
     }
   `
   const config = {
-    url: shopifyCollectionFetcher.FUNKO_SHOPIFY_API_URI,
+    url: shopifyCollectionFetcher.SHOPIFY_API_URI,
     headers: {
-      'X-Shopify-Access-Token': `${shopifyCollectionFetcher.FUNKO_SHOPIFY_API_TOKEN}`,
+      'X-Shopify-Access-Token': `${shopifyCollectionFetcher.SHOPIFY_API_TOKEN}`,
       'Content-Type': 'application/graphql',
       Accept: 'application/json'
     },
