@@ -193,7 +193,7 @@ shopifyCollectionFetcher.parseIt = async (collectionId, responseData) => {
         const nextPageData = await shopifyCollectionFetcher.fetchIt(collectionId, cursor)
         const nextPageResults = await shopifyCollectionFetcher.parseIt(collectionId, nextPageData)
 
-        concat = items.concat(nextPageResults)
+        items = items.concat(nextPageResults)
       }
     }
   }
