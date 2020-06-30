@@ -148,7 +148,7 @@ shopifyCollectionFetcher.fetchIt = async (collectionId, afterCursor = null) => {
  * @returns {Promise<void>}
  */
 shopifyCollectionFetcher.parseIt = async (collectionId, responseData) => {
-  const items = []
+  let items = []
   if (responseData !== null) {
     // let response = JSON.parse(data)
 
@@ -190,15 +190,15 @@ shopifyCollectionFetcher.parseIt = async (collectionId, responseData) => {
         responseData.result.data.collections.edges[0].node.products.pageInfo.hasNextPage === true) {
         const lastProductIndex = responseData.result.data.collections.edges[0].node.products.edges.length - 1
         const cursor = responseData.result.data.collections.edges[0].node.products.edges[lastProductIndex].cursor
-        const nextPageData = await fetchIt(collectionId, cursor)
-        const nextPageResults = await parseProductsFromCollection(collectionId, nextPageData)
+        const nextPageData = await shopifyCollectionFetcher.fetchIt(collectionId, cursor)
+        const nextPageResults = await shopifyCollectionFetcher.parseIt(collectionId, nextPageData)
 
         concat = items.concat(nextPageResults)
       }
     }
   }
 
-  log.debug(`FOUND ${items.length} items.`)
+  console.debug(`FOUND ${items.length} items.`)
   return items
 }
 
