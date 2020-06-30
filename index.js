@@ -171,7 +171,7 @@ shopifyCollectionFetcher.parseIt = async (collectionId, responseData, items = []
         console.debug(`Found ${flatArr.length} products for collection ID: ${collectionId}`)
 
         // Add items
-        items.push(flatArr)
+        items = items.concat(flatArr)
       }
 
       // Handle additional pages of data
@@ -188,12 +188,12 @@ shopifyCollectionFetcher.parseIt = async (collectionId, responseData, items = []
         const nextPageData = await fetchIt(collectionId, cursor)
         const nextPageResults = await parseProductsFromCollection(collectionId, nextPageData)
 
-        items.push(nextPageResults)
+        concat = items.concat(nextPageResults)
       }
     }
   }
 
-  console.debug(`FOUND ${items.length} items.`)
+  log.debug(`FOUND ${items.length} items.`)
   return items
 }
 
