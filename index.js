@@ -41,8 +41,8 @@ const shopifyCollectionFetcher = {
 shopifyCollectionFetcher.init = (configObj) => {
   shopifyCollectionFetcher.SHOPIFY_API_URI = configObj.SHOPIFY_API_URI || shopifyCollectionFetcher.SHOPIFY_API_URI
   shopifyCollectionFetcher.SHOPIFY_API_TOKEN = configObj.SHOPIFY_API_TOKEN || shopifyCollectionFetcher.SHOPIFY_API_TOKEN
-  shopifyCollectionFetcher.SHOPIFY_API_RATE_LIMIT = shopifyCollectionFetcher.SHOPIFY_API_RATE_LIMIT || 50
-  shopifyCollectionFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS = configObj.SHOPIFY_API_GRAPHQL_PRODUCTS || 20
+  shopifyCollectionFetcher.SHOPIFY_API_RATE_LIMIT = configObj.SHOPIFY_API_RATE_LIMIT || shopifyCollectionFetcher.SHOPIFY_API_RATE_LIMIT
+  shopifyCollectionFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS = configObj.SHOPIFY_API_GRAPHQL_PRODUCTS || shopifyCollectionFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS
 }
 
 /**
