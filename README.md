@@ -9,7 +9,7 @@ This library returns all products or ids from a Shopify collection using the Gra
 Inside of your project, do:
 
 ```
-yarn add shopify-collection-fetcher
+yarn add @originalfunko/shopify-collection-fetcher
 ```
 
 Simply include the library:
