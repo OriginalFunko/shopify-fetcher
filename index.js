@@ -65,6 +65,7 @@ shopifyCollectionFetcher.fetchIt = async (collectionId, afterCursor = null) => {
         edges {
           node {
             id
+            title
             products(first: ${shopifyCollectionFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS}, sortKey: COLLECTION_DEFAULT${after}) {
               pageInfo {
                 hasNextPage
@@ -118,10 +119,10 @@ shopifyCollectionFetcher.fetchIt = async (collectionId, afterCursor = null) => {
           console.error(`Get products failed(${response.status}): ${JSON.stringify(response)}`)
 
           if (response.status === 429) {
-            // Wait
+            // Wait!
             await sleep(randomIntFromInterval(1000, 5000))
 
-            // Retry
+            // Retry ...
             return fetchIt(collectionId, afterCursor)
           }
         }
