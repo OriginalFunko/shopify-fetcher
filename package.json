@@ -1,8 +1,8 @@
 {
-  "name": "@originalfunko/shopify-collection-fetcher",
-  "version": "0.2.0",
+  "name": "@originalfunko/shopify-fetcher",
+  "version": "1.0.0",
   "main": "index.js",
-  "repository": "git@github.com:OriginalFunko/shopify-collection-fetcher.git",
+  "repository": "git@github.com:OriginalFunko/shopify-fetcher.git",
   "author": "Original Funko <https://github.com/OriginalFunko>",
   "license": "MPL-2.0",
   "private": false,
