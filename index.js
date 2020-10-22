@@ -417,4 +417,156 @@ shopifyFetcher.productPublication.fetchIt = async (publicationId, afterCursor = 
   return result
 }
 
+shopifyFetcher.product.fetchId = async (productId, publicationId) => {
+
+  const query = /* GraphQL */ `
+      {
+        product(id:"gid://shopify/Product/${productId}") {
+          publishedOnPublication(publicationId:"${publicationId}")
+          id
+          title
+          handle
+          descriptionHtml
+          productType
+          vendor
+          tags
+            options {
+              position
+              values
+              name
+            }
+          createdAt
+          publishedAt
+          updatedAt
+          variants(first:${shopifyFetcher.SHOPIFY_API_GRAPHQL_VARIANTS}) {
+            edges {
+              node {
+                id
+                title
+                price
+                compareAtPrice
+                sku
+                inventoryQuantity
+                selectedOptions {
+                  name
+                  value
+                }
+              }
+            }
+          }
+          media(first:${shopifyFetcher.SHOPIFY_API_GRAPHQL_MEDIA},sortKey: POSITION) {
+            edges{
+              node{
+                ... fieldsForMediaTypes
+              }
+            }
+          }
+        }
+      }
+      fragment fieldsForMediaTypes on Media {
+        alt
+        mediaContentType
+
+        ... on Video {
+          id
+          preview {
+            image {
+              altText
+              originalSrc
+            }
+          }
+          sources {
+            format
+            height
+            mimeType
+            url
+            width
+          }
+        }
+
+        ... on ExternalVideo {
+          id
+          embeddedUrl
+        }
+
+        ... on Model3d {
+          sources {
+            format
+            mimeType
+            url
+          }
+        }
+
+        ... on MediaImage {
+          id
+          image {
+            originalSrc
+          }
+        }
+      }
+  `
+
+  const config = {
+    url    : `${shopifyFetcher.SHOPIFY_API_URI}`,
+    headers: {
+      'X-Shopify-Access-Token': `${shopifyFetcher.SHOPIFY_API_TOKEN}`,
+      'Content-Type'          : 'application/graphql',
+      Accept                  : 'application/json'
+    },
+    method : 'POST',
+    body   : query
+  }
+
+  // logger.info(`
+  //   curl ${config.url} \\
+  //     -X ${config.method} \\
+  //     -d '${config.body}' \\
+  //     -H "Content-Type: application/json"
+  //   `)
+
+  // console.log(`Attempting call to ${config.url} `)
+  // console.debug(`Headers: ${JSON.stringify(config.headers)}`)
+  // console.debug(`Attempting query: ${query}`)
+
+  const result = await fetch(config.url, config)
+      .then(async response => {
+        if (response && response.ok) {
+          return response.json()
+        } else {
+          console.error(
+              `Get product by ID failed(${response.status}): ${JSON.stringify(response)}`
+          )
+          if (response.status === 429 || response.status === 520 || response.status === 500) {
+            // Wait
+            await sleep(randomIntFromInterval(shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MIN, shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MAX))
+
+            console.error(`RETRYING fetch for product: ${productId} and publication: ${publicationId}`)
+
+            // Retry
+            return shopifyFetcher.product.fetchIt(productId,publicationId)
+          }
+        }
+      })
+      .then( async (jsonData) => {
+        // Check for throttled response
+        if (jsonData &&
+            jsonData.errors &&
+            (/throttled/i).test(JSON.stringify(jsonData.errors))) {
+          console.error('Error: THROTTLED limit reached.... waiting to try again...')
+          await shopifyFetcher.handleCost(jsonData.extensions.cost)
+
+          console.error(`RETRYING fetch for product: ${productId} and publication: ${publicationId}`)
+
+          // Retry
+          return shopifyFetcher.product.fetchIt(productId, publicationId)
+        } else {
+          return jsonData
+        }
+      })
+      .catch(err => {
+        console.error(err)
+      })
+  return result
+}
+
 module.exports = shopifyFetcher
