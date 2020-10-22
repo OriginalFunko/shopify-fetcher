@@ -46,7 +46,8 @@ const shopifyFetcher = {
 
   // Fetcher types:
   collection: {},
-  productPublication: {}
+  productPublication: {},
+  product: {}
 }
 
 shopifyFetcher.init = (configObj) => {
@@ -417,7 +418,7 @@ shopifyFetcher.productPublication.fetchIt = async (publicationId, afterCursor = 
   return result
 }
 
-shopifyFetcher.product.fetchId = async (productId, publicationId) => {
+shopifyFetcher.product.fetchIt = async (productId, publicationId) => {
 
   const query = /* GraphQL */ `
       {
