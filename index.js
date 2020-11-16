@@ -140,36 +140,40 @@ shopifyFetcher.collection.fetchIt = async (collectionId, afterCursor = null) => 
     .then(
       async (response) => {
         if (response && response.ok) {
-          const limitHeader = response.headers.get('HTTP_X_SHOPIFY_SHOP_API_CALL_LIMIT')
-          const limitCurrent = limitHeader ? limitHeader.substring(0, limitHeader.indexOf('/')) : 1
-          const limitMax = limitHeader ? limitHeader.substring(limitHeader.indexOf('/') + 1, limitHeader.length) : 1
-
-          const limit = limitCurrent / limitMax * 100
-
-          // Check API limit, if more than 50%.... wait
-          if (limit >= shopifyFetcher.SHOPIFY_API_RATE_LIMIT_PERCENTAGE) {
-            console.log(`Getting close to API limit, ${limit}% of ${limitMax}`)
-            // await sleep(randomIntFromInterval(1000, 5000))
-          }
-
-          console.debug(`--------- Checking call limit header ${limitHeader}`)
           return response.json()
         } else {
-          console.error(`Get products failed(${response.status}): ${JSON.stringify(response)}`)
+          console.error(`Get collections failed(${response.status}): ${JSON.stringify(response)}`)
 
-          if (response.status === 429) {
-            // Wait!
-            await sleep(randomIntFromInterval(1000, 5000))
+          // The Shopify status codes:
+          //     520: is a known issue, they choose not to disclose as an issue
+          //     429: happens if too many requests are made during a small window
+          //     500: random error that is seen but with no real response
+          if (response.status === 429 || response.status === 520 || response.status === 500) {
+            // Wait
+            await sleep(randomIntFromInterval(shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MIN, shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MAX))
 
-            // Retry ...
-            return fetchIt(collectionId, afterCursor)
+            console.error(`RETRYING collections after error(${response.status}): ${collectionId} with after: ${afterCursor}`)
+            // Retry
+            return shopifyFetcher.collection.fetchIt(collectionId, afterCursor)
           }
         }
       }
     )
-    .then(
-      (jsonData) => {
-        return jsonData
+    .then( async (jsonData) => {
+        // Check for throttled response
+        if (jsonData &&
+            jsonData.errors &&
+            (/throttled/i).test(JSON.stringify(jsonData.errors))) {
+          console.error('Error: THROTTLED limit reached.... waiting to try again...')
+          await shopifyFetcher.handleCost(jsonData.extensions.cost)
+
+          console.error(`RETRYING collection: ${collectionId} with after: ${afterCursor}`)
+
+          // Retry
+          return shopifyFetcher.collection.fetchIt(collectionId, afterCursor)
+        } else {
+          return jsonData
+        }
       }
     )
     .catch(
@@ -178,7 +182,7 @@ shopifyFetcher.collection.fetchIt = async (collectionId, afterCursor = null) => 
       }
     )
 
-  return { result }
+  return result
 }
 
 /**
@@ -193,18 +197,17 @@ shopifyFetcher.collection.parseIt = async (collectionId, responseData) => {
     // let response = JSON.parse(data)
 
     if (responseData &&
-        responseData.result &&
-        responseData.result.data &&
-        responseData.result.data.collections &&
-        responseData.result.data.collections.edges &&
-        Array.isArray(responseData.result.data.collections.edges) &&
-        responseData.result.data.collections.edges.length === 1 &&
-        responseData.result.data.collections.edges[0].node &&
-        responseData.result.data.collections.edges[0].node.products &&
-        responseData.result.data.collections.edges[0].node.products.edges &&
-        Array.isArray(responseData.result.data.collections.edges[0].node.products.edges) &&
-        responseData.result.data.collections.edges[0].node.products.edges.length > 0) {
-      const products = responseData.result.data.collections.edges[0].node.products.edges
+        responseData.data &&
+        responseData.data.collections &&
+        responseData.data.collections.edges &&
+        Array.isArray(responseData.data.collections.edges) &&
+        responseData.data.collections.edges.length === 1 &&
+        responseData.data.collections.edges[0].node &&
+        responseData.data.collections.edges[0].node.products &&
+        responseData.data.collections.edges[0].node.products.edges &&
+        Array.isArray(responseData.data.collections.edges[0].node.products.edges) &&
+        responseData.data.collections.edges[0].node.products.edges.length > 0) {
+      const products = responseData.data.collections.edges[0].node.products.edges
 
       if (products && Array.isArray(products)) {
         const flatArr = await Promise.all(products.map(
@@ -220,16 +223,16 @@ shopifyFetcher.collection.parseIt = async (collectionId, responseData) => {
       }
 
       // Handle additional pages of data
-      if (responseData.result.data.collections &&
-        responseData.result.data.collections.edges &&
-        Array.isArray(responseData.result.data.collections.edges) &&
-        responseData.result.data.collections.edges[0].node &&
-        responseData.result.data.collections.edges[0].node.products &&
-        responseData.result.data.collections.edges[0].node.products.pageInfo &&
-        responseData.result.data.collections.edges[0].node.products.pageInfo.hasNextPage &&
-        responseData.result.data.collections.edges[0].node.products.pageInfo.hasNextPage === true) {
-        const lastProductIndex = responseData.result.data.collections.edges[0].node.products.edges.length - 1
-        const cursor = responseData.result.data.collections.edges[0].node.products.edges[lastProductIndex].cursor
+      if (responseData.data.collections &&
+        responseData.data.collections.edges &&
+        Array.isArray(responseData.data.collections.edges) &&
+        responseData.data.collections.edges[0].node &&
+        responseData.data.collections.edges[0].node.products &&
+        responseData.data.collections.edges[0].node.products.pageInfo &&
+        responseData.data.collections.edges[0].node.products.pageInfo.hasNextPage &&
+        responseData.data.collections.edges[0].node.products.pageInfo.hasNextPage === true) {
+        const lastProductIndex = responseData.data.collections.edges[0].node.products.edges.length - 1
+        const cursor = responseData.data.collections.edges[0].node.products.edges[lastProductIndex].cursor
         const nextPageData = await shopifyFetcher.collection.fetchIt(collectionId, cursor)
         const nextPageResults = await shopifyFetcher.collection.parseIt(collectionId, nextPageData)
 
