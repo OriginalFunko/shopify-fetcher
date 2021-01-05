@@ -273,6 +273,10 @@ shopifyFetcher.productPublication.fetchIt = async (publicationId, afterCursor = 
                   values
                   name
                 }
+                seo {
+                  description
+                  title
+                }
                 createdAt
                 publishedAt
                 updatedAt
@@ -439,6 +443,10 @@ shopifyFetcher.product.fetchIt = async (productId, publicationId) => {
               values
               name
             }
+          seo {
+            description
+            title
+          }
           createdAt
           publishedAt
           updatedAt
