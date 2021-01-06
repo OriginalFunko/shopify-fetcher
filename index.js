@@ -105,6 +105,11 @@ shopifyFetcher.collection.fetchIt = async (collectionId, afterCursor = null) => 
           node {
             id
             title
+            description
+            seo {
+              description
+              title
+            }
             products(first: ${shopifyFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS}, sortKey: COLLECTION_DEFAULT${after}) {
               pageInfo {
                 hasNextPage
@@ -264,6 +269,7 @@ shopifyFetcher.productPublication.fetchIt = async (publicationId, afterCursor = 
                 id
                 title
                 handle
+                description
                 descriptionHtml
                 productType
                 vendor
@@ -272,6 +278,10 @@ shopifyFetcher.productPublication.fetchIt = async (publicationId, afterCursor = 
                   position
                   values
                   name
+                }
+                seo {
+                  description
+                  title
                 }
                 createdAt
                 publishedAt
@@ -430,6 +440,7 @@ shopifyFetcher.product.fetchIt = async (productId, publicationId) => {
           id
           title
           handle
+          description
           descriptionHtml
           productType
           vendor
@@ -439,6 +450,10 @@ shopifyFetcher.product.fetchIt = async (productId, publicationId) => {
               values
               name
             }
+          seo {
+            description
+            title
+          }
           createdAt
           publishedAt
           updatedAt
