@@ -42,14 +42,12 @@ const shopifyFetcher = {
 
   SHOPIFY_API_GRAPHQL_MEDIA: 7,
   SHOPIFY_API_GRAPHQL_COLLECTIONS: 50,
+  SHOPIFY_API_GRAPHQL_COLLECTIONS_PUBLICATION: null,
 
-  // Example: 
-  //     Channel name: Funko Dotcom UI
-  //     value should be: funko-dotcom-ui
-  // Reference: https://community.shopify.com/c/Shopify-APIs-SDKs/GraphQL-admin-api-returns-unpublished-products-in-query-quot/td-p/528069
-  SHOPIFY_API_GRAPHQL_COLLECTION_PUBLISHED: null,
   SHOPIFY_API_GRAPHQL_PRODUCTS: 15,
   SHOPIFY_API_GRAPHQL_VARIANTS: 10,
+
+  LOGGING_DEBUG_ON: false,
 
   // Fetcher types:
   collection: {},
@@ -62,7 +60,7 @@ shopifyFetcher.init = (configObj) => {
   shopifyFetcher.SHOPIFY_API_URI = configObj.SHOPIFY_API_URI || shopifyFetcher.SHOPIFY_API_URI
   shopifyFetcher.SHOPIFY_API_TOKEN = configObj.SHOPIFY_API_TOKEN || shopifyFetcher.SHOPIFY_API_TOKEN
 
-  shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTIONS_PUBLISHED = configObj.SHOPIFY_API_GRAPHQL_COLLECTIONS_PUBLISHED || shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTIONS_PUBLISHED 
+  shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTIONS_PUBLICATION = configObj.SHOPIFY_API_GRAPHQL_COLLECTIONS_PUBLICATION || null
   shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTIONS = configObj.SHOPIFY_API_GRAPHQL_COLLECTIONS || shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTIONS
   shopifyFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS = configObj.SHOPIFY_API_GRAPHQL_PRODUCTS || shopifyFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS
   shopifyFetcher.SHOPIFY_API_GRAPHQL_VARIANTS = configObj.SHOPIFY_API_GRAPHQL_VARIANTS || shopifyFetcher.SHOPIFY_API_GRAPHQL_VARIANTS
@@ -71,6 +69,14 @@ shopifyFetcher.init = (configObj) => {
   shopifyFetcher.SHOPIFY_API_RATE_LIMIT_PERCENTAGE = configObj.SHOPIFY_API_RATE_LIMIT_PERCENTAGE || shopifyFetcher.SHOPIFY_API_RATE_LIMIT_PERCENTAGE
   shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MIN = configObj.SHOPIFY_API_RATE_LIMIT_MIN || shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MIN
   shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MAX = configObj.SHOPIFY_API_RATE_LIMIT_MAX || shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MAX
+
+  shopifyFetcher.LOGGING_DEBUG_ON = configObj.LOGGING_DEBUG_ON || shopifyFetcher.LOGGING_DEBUG_ON
+}
+
+shopifyFetcher.handleLogging = (str) => {
+  if (shopifyFetcher.LOGGING_DEBUG_ON) {
+    console.debug(str)
+  }
 }
 
 // ***********************************************
@@ -78,7 +84,7 @@ shopifyFetcher.init = (configObj) => {
 // ** allowing the request cost to restore.     **
 // ***********************************************
 shopifyFetcher.handleCost = async (cost) => {
-  console.log(`COST: ${JSON.stringify(cost)}`)
+  shopifyFetcher.handleLogging(`COST: ${JSON.stringify(cost)}`)
 
   if (cost && cost.throttleStatus && cost.throttleStatus.maximumAvailable && cost.throttleStatus.currentlyAvailable) {
     const max = cost.throttleStatus.maximumAvailable
@@ -88,7 +94,7 @@ shopifyFetcher.handleCost = async (cost) => {
 
     // Check percentage of usage
     if (percentageUsed >= shopifyFetcher.SHOPIFY_API_RATE_LIMIT_PERCENTAGE) {
-      console.info(`Getting close to API limit, ${percentageUsed}% of ${max}`)
+      shopifyFetcher.handleLogging(`Getting close to API limit, ${percentageUsed}% of ${max}`)
       await sleep(randomIntFromInterval(shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MIN, shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MAX))
     }
   }
@@ -107,7 +113,7 @@ shopifyFetcher.collections.fetchIt = async (afterCursor = null) => {
   }
   const query = /* GraphQL */ `
     {
-      collections(first: ${shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTIONS}, query: "published_status:${shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTION_PUBLISHED ? '\"' + shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTION_PUBLISHED + ':visible\"' : 'published'}"${after}) {
+      collections(first: ${shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTIONS}, query: "published_status:published"${after}) {
         pageInfo {
           hasNextPage
         }
@@ -121,6 +127,7 @@ shopifyFetcher.collections.fetchIt = async (afterCursor = null) => {
               description
               title
             }
+            ${shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTIONS_PUBLICATION ? 'publishedOnPublication(publicationId:"' + shopifyFetcher.SHOPIFY_API_GRAPHQL_COLLECTIONS_PUBLICATION + '")' : ''}
             products(first: ${shopifyFetcher.SHOPIFY_API_GRAPHQL_PRODUCTS}, sortKey: COLLECTION_DEFAULT) {
               pageInfo {
                 hasNextPage
@@ -137,6 +144,7 @@ shopifyFetcher.collections.fetchIt = async (afterCursor = null) => {
       }
     }
   `
+  
   const config = {
     url: shopifyFetcher.SHOPIFY_API_URI,
     headers: {
@@ -148,9 +156,9 @@ shopifyFetcher.collections.fetchIt = async (afterCursor = null) => {
     body: query
   }
 
-  console.log(`Attempting call to ${config.url} `)
-  console.debug(`Headers: ${JSON.stringify(config.headers)}`)
-  console.debug(`Attempting query: ${query}`)
+  shopifyFetcher.handleLogging(`Attempting call to ${config.url} `)
+  shopifyFetcher.handleLogging(`Headers: ${JSON.stringify(config.headers)}`)
+  shopifyFetcher.handleLogging(`Attempting query: ${query}`)
 
   const result = await fetch(config.url, config)
     .then(
@@ -168,7 +176,7 @@ shopifyFetcher.collections.fetchIt = async (afterCursor = null) => {
             // Wait
             await sleep(randomIntFromInterval(shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MIN, shopifyFetcher.SHOPIFY_API_RATE_LIMIT_MAX))
 
-            console.error(`RETRYING collections after error(${response.status}): ${collectionId} with after: ${afterCursor}`)
+            console.error(`RETRYING collections after error status: ${response.status} with after cursor: ${afterCursor}`)
             // Retry
             return shopifyFetcher.collections.fetchIt(afterCursor)
           }
@@ -183,7 +191,7 @@ shopifyFetcher.collections.fetchIt = async (afterCursor = null) => {
           console.error('Error: THROTTLED limit reached.... waiting to try again...')
           await shopifyFetcher.handleCost(jsonData.extensions.cost)
 
-          console.error(`RETRYING collections: ${collectionId} with after: ${afterCursor}`)
+          console.error(`RETRYING collections call after throttle response with after cursor: ${afterCursor}`)
 
           // Retry
           return shopifyFetcher.collections.fetchIt(afterCursor)
@@ -260,9 +268,12 @@ shopifyFetcher.collections.parseIt = async (responseData) => {
         responseData.data.collections.edges = responseData.data.collections.edges.concat(nextPageResults.data.collections.edges)
       }
     }
-  }
 
-  console.debug(`FOUND ${responseData.data.collections.edges.length} collections.`)
+    if (responseData?.data?.collections?.edges) {
+      shopifyFetcher.handleLogging(`FOUND ${responseData.data.collections.edges.length} collections.`)
+    }
+  }
+  
   return responseData
 }
 
@@ -319,9 +330,9 @@ shopifyFetcher.collection.fetchIt = async (collectionId, afterCursor = null) => 
     body: query
   }
 
-  console.log(`Attempting call to ${config.url} `)
-  console.debug(`Headers: ${JSON.stringify(config.headers)}`)
-  console.debug(`Attempting query: ${query}`)
+  shopifyFetcher.handleLogging(`Attempting call to ${config.url} `)
+  shopifyFetcher.handleLogging(`Headers: ${JSON.stringify(config.headers)}`)
+  shopifyFetcher.handleLogging(`Attempting query: ${query}`)
 
   const result = await fetch(config.url, config)
     .then(
@@ -403,7 +414,7 @@ shopifyFetcher.collection.parseIt = async (collectionId, responseData) => {
           }
         ))
 
-        console.debug(`Found ${flatArr.length} products for collection ID: ${collectionId}`)
+        shopifyFetcher.handleLogging(`Found ${flatArr.length} products for collection ID: ${collectionId}`)
 
         // Add items
         items = items.concat(flatArr)
@@ -428,7 +439,8 @@ shopifyFetcher.collection.parseIt = async (collectionId, responseData) => {
     }
   }
 
-  console.debug(`FOUND ${items.length} items.`)
+  shopifyFetcher.handleLogging(`FOUND ${items.length} items.`)
+
   return items
 }
 
@@ -559,9 +571,9 @@ shopifyFetcher.productPublication.fetchIt = async (publicationId, afterCursor = 
   //     -H "Content-Type: application/json"
   //   `)
 
-  // console.log(`Attempting call to ${config.url} `)
-  // console.debug(`Headers: ${JSON.stringify(config.headers)}`)
-  // console.debug(`Attempting query: ${query}`)
+  shopifyFetcher.handleLogging(`Attempting call to ${config.url} `)
+  shopifyFetcher.handleLogging(`Headers: ${JSON.stringify(config.headers)}`)
+  shopifyFetcher.handleLogging(`Attempting query: ${query}`)
 
   const result = await fetch(config.url, config)
     .then(
