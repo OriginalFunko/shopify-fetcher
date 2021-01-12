@@ -221,7 +221,9 @@ shopifyFetcher.collections.parseIt = async (responseData) => {
   if (responseData) {
 
     // Does the response contain collections?
-    if (responseData?.data?.collections?.edges &&
+    if (responseData.data &&
+        responseData.data.collections &&
+        responseData.data.collections.edges &&
         Array.isArray(responseData.data.collections.edges) &&
         responseData.data.collections.edges.length > 0 ) {
 
@@ -230,7 +232,11 @@ shopifyFetcher.collections.parseIt = async (responseData) => {
         const collection = responseData.data.collections.edges[x]
 
         // Do we need to handle more data?
-        if (collection?.node?.products?.pageInfo?.hasNextPage === true) {
+        if (collection &&
+            collection.node &&
+            collection.node.products &&
+            collection.node.products.pageInfo &&
+            collection.node.products.pageInfo.hasNextPage === true) {
           const lastProductIndex = collection.node.products.edges.length - 1
           const cursor = collection.node.products.edges[lastProductIndex].cursor
           const collectionId = collection.node.id.substring(collection.node.id.lastIndexOf('/') + 1)
@@ -257,9 +263,12 @@ shopifyFetcher.collections.parseIt = async (responseData) => {
       }
 
       // Handle additional pages of collections
-      if (responseData?.data?.collections?.edges &&
-        Array.isArray(responseData.data.collections.edges) &&
-        responseData?.data?.collections?.pageInfo?.hasNextPage === true) {
+      if (responseData.data &&
+          responseData.data.collections &&
+          responseData.data.collections.edges &&
+          Array.isArray(responseData.data.collections.edges) &&
+          responseData.data.collections.pageInfo &&
+          responseData.data.collections.pageInfo.hasNextPage === true) {
         const lastProductIndex = responseData.data.collections.edges.length - 1
         const cursor = responseData.data.collections.edges[lastProductIndex].cursor
         const nextPageData = await shopifyFetcher.collections.fetchIt(cursor)
@@ -269,7 +278,9 @@ shopifyFetcher.collections.parseIt = async (responseData) => {
       }
     }
 
-    if (responseData?.data?.collections?.edges) {
+    if (responseData.data &&
+        responseData.data.collections &&
+        responseData.data.collections.edges) {
       shopifyFetcher.handleLogging(`FOUND ${responseData.data.collections.edges.length} collections.`)
     }
   }
